@@ -1,0 +1,55 @@
+#%RAML 1.0 Trait
+
+usage: |
+  Apply to GET collection endpoints to enable field-based text search.
+  Consumers may pass q (full-text) or individual field filters.
+
+queryParameters:
+  q:
+    type: string
+    description: Free-text search term applied across searchable fields
+    required: false
+    maxLength: 255
+    example: "Acme"
+  name:
+    type: string
+    description: Filter by name field (partial match, case-insensitive)
+    required: false
+    maxLength: 255
+    example: "Corp"
+  email:
+    type: string
+    description: Filter by email address (exact match)
+    required: false
+    maxLength: 80
+    example: "jane.doe@acme.com"
+  phone:
+    type: string
+    description: Filter by phone number (partial match)
+    required: false
+    maxLength: 40
+    example: "+1-415"
+  ownerId:
+    type: string
+    description: Filter by owner identifier (exact match)
+    required: false
+    maxLength: 100
+    example: "user@example.com"
+  createdAfter:
+    type: string
+    description: Return records created on or after this ISO 8601 date-time (UTC)
+    required: false
+    pattern: "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z)?$"
+    example: "2024-01-01T00:00:00.000Z"
+  createdBefore:
+    type: string
+    description: Return records created on or before this ISO 8601 date-time (UTC)
+    required: false
+    pattern: "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z)?$"
+    example: "2024-12-31T23:59:59.999Z"
+  updatedAfter:
+    type: string
+    description: Return records updated on or after this ISO 8601 date-time (UTC)
+    required: false
+    pattern: "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z)?$"
+    example: "2024-06-01T00:00:00.000Z"

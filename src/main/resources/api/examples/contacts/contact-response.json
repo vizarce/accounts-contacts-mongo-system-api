@@ -1,0 +1,23 @@
+{
+  "id": "64c1d2e3f4a5b6789012cdef",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "email": "jane.doe@acme.com",
+  "phone": "+1-415-555-0200",
+  "mobilePhone": "+1-415-555-0201",
+  "accountId": "64a1b2c3d4e5f6789012abcd",
+  "title": "VP of Engineering",
+  "department": "Engineering",
+  "mailingAddress": {
+    "street": "123 Main St",
+    "city": "San Francisco",
+    "state": "CA",
+    "postalCode": "94105",
+    "country": "USA"
+  },
+  "description": "Key technical decision maker",
+  "ownerId": "user@example.com",
+  "salesforceId": "0035g00000XxYzZAA1",
+  "createdAt": "2024-02-01T09:00:00.000Z",
+  "updatedAt": "2024-07-20T14:30:00.000Z"
+}

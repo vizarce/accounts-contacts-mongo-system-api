@@ -1,0 +1,8 @@
+{
+  "correlationId": "550e8400-e29b-41d4-a716-446655440003",
+  "status": 404,
+  "error": "NOT_FOUND",
+  "message": "Account with id '64a1b2c3d4e5f6789012abcd' was not found",
+  "path": "/api/v1/accounts/64a1b2c3d4e5f6789012abcd",
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}

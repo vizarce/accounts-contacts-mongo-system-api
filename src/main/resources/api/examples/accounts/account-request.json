@@ -1,0 +1,26 @@
+{
+  "accountName": "Acme Corporation",
+  "accountNumber": "ACC-001234",
+  "type": "Customer",
+  "industry": "Technology",
+  "phone": "+1-415-555-0100",
+  "website": "https://www.acme.com",
+  "annualRevenue": 5000000.00,
+  "numberOfEmployees": 250,
+  "description": "Leading provider of innovative solutions",
+  "billingAddress": {
+    "street": "123 Main St",
+    "city": "San Francisco",
+    "state": "CA",
+    "postalCode": "94105",
+    "country": "USA"
+  },
+  "shippingAddress": {
+    "street": "123 Main St",
+    "city": "San Francisco",
+    "state": "CA",
+    "postalCode": "94105",
+    "country": "USA"
+  },
+  "ownerId": "user@example.com"
+}

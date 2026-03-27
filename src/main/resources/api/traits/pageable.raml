@@ -1,0 +1,32 @@
+#%RAML 1.0 Trait
+
+usage: Apply to GET collection endpoints to enable pagination via query parameters
+
+queryParameters:
+  page:
+    type: integer
+    description: Page number to retrieve (1-based)
+    default: 1
+    minimum: 1
+    required: false
+    example: 1
+  pageSize:
+    type: integer
+    description: Number of records per page
+    default: 25
+    minimum: 1
+    maximum: 100
+    required: false
+    example: 25
+
+responses:
+  400:
+    description: Invalid pagination parameters supplied
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../datatypes/error-type.raml#/types/ErrorResponse
+        example: !include ../examples/errors/error-400.json

@@ -1,0 +1,48 @@
+#%RAML 1.0 SecurityScheme
+
+description: |
+  MuleSoft Anypoint Platform Client ID Enforcement policy.
+  Every request must include a valid client_id and client_secret pair
+  registered in Anypoint Exchange. These credentials are validated by
+  the API Manager gateway before the request reaches the implementation.
+
+type: Pass Through
+
+describedBy:
+  headers:
+    client_id:
+      description: |
+        Application client ID obtained from Anypoint Platform when the
+        application is registered to consume this API.
+      type: string
+      required: true
+      pattern: "^[a-f0-9]{32}$"
+      example: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+    client_secret:
+      description: |
+        Application client secret corresponding to the provided client_id.
+        Must be kept confidential and never exposed in logs or URLs.
+      type: string
+      required: true
+      example: "A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0"
+  responses:
+    401:
+      description: Missing or invalid client_id / client_secret
+      body:
+        application/json:
+          example: |
+            {
+              "status": 401,
+              "error": "UNAUTHORIZED",
+              "message": "Invalid client credentials"
+            }
+    403:
+      description: Valid credentials but access to this API is not permitted for this application
+      body:
+        application/json:
+          example: |
+            {
+              "status": 403,
+              "error": "FORBIDDEN",
+              "message": "Client application is not authorized to access this API"
+            }

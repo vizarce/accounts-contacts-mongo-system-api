@@ -1,0 +1,20 @@
+{
+  "correlationId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": 400,
+  "error": "BAD_REQUEST",
+  "message": "Request validation failed",
+  "path": "/api/v1/accounts",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "details": [
+    {
+      "field": "accountName",
+      "message": "must not be blank",
+      "rejectedValue": ""
+    },
+    {
+      "field": "phone",
+      "message": "must be a valid phone number",
+      "rejectedValue": "not-a-phone"
+    }
+  ]
+}

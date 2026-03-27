@@ -1,0 +1,65 @@
+#%RAML 1.0 Library
+
+usage: |
+  Central RAML library for accounts-contacts-mongo-system-api.
+  Import this library in the main RAML file to access all shared types,
+  traits and security schemes in one place.
+
+uses:
+  CommonTypes:  ../datatypes/common-types.raml
+  AccountLib:   ../datatypes/account-type.raml
+  ContactLib:   ../datatypes/contact-type.raml
+  LeadLib:      ../datatypes/lead-type.raml
+  ErrorLib:     ../datatypes/error-type.raml
+
+types:
+
+  # ── Re-exported common types ──────────────────────────────────────────────
+  MongoId:          CommonTypes.MongoId
+  ISODateTime:      CommonTypes.ISODateTime
+  Address:          CommonTypes.Address
+  PaginationMeta:   CommonTypes.PaginationMeta
+  CorrelationId:    CommonTypes.CorrelationId
+
+  # ── Error types ────────────────────────────────────────────────────────────
+  ErrorDetail:      ErrorLib.ErrorDetail
+  ErrorResponse:    ErrorLib.ErrorResponse
+
+  # ── Account types ──────────────────────────────────────────────────────────
+  AccountType:          AccountLib.AccountType
+  AccountIndustry:      AccountLib.AccountIndustry
+  AccountBase:          AccountLib.AccountBase
+  AccountRequest:       AccountLib.AccountRequest
+  AccountUpdateRequest: AccountLib.AccountUpdateRequest
+  Account:              AccountLib.Account
+  AccountsResponse:     AccountLib.AccountsResponse
+
+  # ── Contact types ──────────────────────────────────────────────────────────
+  ContactBase:          ContactLib.ContactBase
+  ContactRequest:       ContactLib.ContactRequest
+  ContactUpdateRequest: ContactLib.ContactUpdateRequest
+  Contact:              ContactLib.Contact
+  ContactsResponse:     ContactLib.ContactsResponse
+
+  # ── Lead types ─────────────────────────────────────────────────────────────
+  LeadStatus:           LeadLib.LeadStatus
+  LeadSource:           LeadLib.LeadSource
+  LeadBase:             LeadLib.LeadBase
+  LeadRequest:          LeadLib.LeadRequest
+  LeadUpdateRequest:    LeadLib.LeadUpdateRequest
+  LeadConvertRequest:   LeadLib.LeadConvertRequest
+  Lead:                 LeadLib.Lead
+  LeadsResponse:        LeadLib.LeadsResponse
+  LeadConvertResponse:  LeadLib.LeadConvertResponse
+
+traits:
+  pageable:      !include ../traits/pageable.raml
+  searchable:    !include ../traits/searchable.raml
+  sortable:      !include ../traits/sortable.raml
+  cacheable:     !include ../traits/cacheable.raml
+  errorHandling: !include ../traits/error-handling.raml
+
+securitySchemes:
+  clientIdEnforcement: !include ../securitySchemes/client-id-enforcement.raml
+  basicAuth:           !include ../securitySchemes/basic-auth.raml
+  oauth2:              !include ../securitySchemes/oauth2.raml

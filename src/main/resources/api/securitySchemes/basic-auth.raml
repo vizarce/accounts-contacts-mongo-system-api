@@ -1,0 +1,40 @@
+#%RAML 1.0 SecurityScheme
+
+description: |
+  HTTP Basic Authentication as defined in RFC 7617.
+  Clients must supply a valid Base64-encoded "username:password" value
+  in the Authorization header. Intended for internal tooling and
+  health-check scenarios only; prefer OAuth 2.0 for production clients.
+
+type: Basic Authentication
+
+describedBy:
+  headers:
+    Authorization:
+      description: |
+        Base64-encoded credentials in the format:
+        "Basic <base64(username:password)>"
+      type: string
+      required: true
+      example: "Basic dml0YWxpaS56aGFrdW46cGFzc3dvcmQ="
+  responses:
+    401:
+      description: Missing or invalid Authorization header
+      body:
+        application/json:
+          example: |
+            {
+              "status": 401,
+              "error": "UNAUTHORIZED",
+              "message": "Basic authentication credentials are missing or invalid"
+            }
+    403:
+      description: Authenticated but not authorised to access the requested resource
+      body:
+        application/json:
+          example: |
+            {
+              "status": 403,
+              "error": "FORBIDDEN",
+              "message": "User does not have permission to perform this operation"
+            }

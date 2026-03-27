@@ -1,0 +1,228 @@
+#%RAML 1.0 Library
+
+usage: Account data type definition for the accounts-contacts-mongo-system-api
+
+uses:
+  CommonTypes: common-types.raml
+
+types:
+
+  AccountType:
+    description: Classification of the account
+    type: string
+    enum:
+      - Prospect
+      - Customer
+      - Partner
+      - Reseller
+      - Vendor
+      - Other
+
+  AccountIndustry:
+    description: Industry sector of the account
+    type: string
+    enum:
+      - Agriculture
+      - Apparel
+      - Banking
+      - Biotechnology
+      - Chemicals
+      - Communications
+      - Construction
+      - Consulting
+      - Education
+      - Electronics
+      - Energy
+      - Engineering
+      - Entertainment
+      - Environmental
+      - Finance
+      - Food & Beverage
+      - Government
+      - Healthcare
+      - Hospitality
+      - Insurance
+      - Machinery
+      - Media
+      - Not For Profit
+      - Recreation
+      - Retail
+      - Shipping
+      - Technology
+      - Telecommunications
+      - Transportation
+      - Utilities
+      - Other
+
+  AccountBase:
+    description: Core fields shared by account create and update payloads
+    type: object
+    properties:
+      accountName:
+        type: string
+        minLength: 1
+        maxLength: 255
+        description: Name of the account
+        example: "Acme Corporation"
+      accountNumber:
+        type: string
+        maxLength: 40
+        required: false
+        description: Unique account identifier / number (business key)
+        example: "ACC-001234"
+      type:
+        type: AccountType
+        required: false
+        description: Classification of the account
+        example: "Customer"
+      industry:
+        type: AccountIndustry
+        required: false
+        description: Industry sector of the account
+        example: "Technology"
+      phone:
+        type: string
+        maxLength: 40
+        required: false
+        pattern: "^[+\\d\\s()\\-]{7,40}$"
+        description: Primary phone number
+        example: "+1-415-555-0100"
+      website:
+        type: string
+        maxLength: 255
+        required: false
+        pattern: "^https?://.+"
+        description: Account website URL
+        example: "https://www.acme.com"
+      annualRevenue:
+        type: number
+        required: false
+        minimum: 0
+        description: Annual revenue of the account in USD
+        example: 5000000.00
+      numberOfEmployees:
+        type: integer
+        required: false
+        minimum: 0
+        description: Number of employees
+        example: 250
+      description:
+        type: string
+        maxLength: 32000
+        required: false
+        description: Free-text description of the account
+        example: "Leading provider of innovative solutions"
+      billingAddress:
+        type: CommonTypes.Address
+        required: false
+        description: Billing address
+      shippingAddress:
+        type: CommonTypes.Address
+        required: false
+        description: Shipping address
+      ownerId:
+        type: string
+        maxLength: 100
+        required: false
+        description: Identifier of the owner (user or system) responsible for this account
+        example: "user@example.com"
+      salesforceId:
+        type: string
+        maxLength: 18
+        required: false
+        description: Salesforce Account ID for cross-system synchronisation
+        example: "0015g00000XxYzZAA1"
+
+  AccountRequest:
+    description: Payload for creating a new account
+    type: AccountBase
+    properties:
+      accountName:
+        type: string
+        minLength: 1
+        maxLength: 255
+        required: true
+
+  AccountUpdateRequest:
+    description: Payload for updating an existing account (all fields optional for partial update)
+    type: object
+    properties:
+      accountName:
+        type: string
+        minLength: 1
+        maxLength: 255
+        required: false
+      accountNumber:
+        type: string
+        maxLength: 40
+        required: false
+      type:
+        type: AccountType
+        required: false
+      industry:
+        type: AccountIndustry
+        required: false
+      phone:
+        type: string
+        maxLength: 40
+        required: false
+        pattern: "^[+\\d\\s()\\-]{7,40}$"
+      website:
+        type: string
+        maxLength: 255
+        required: false
+        pattern: "^https?://.+"
+      annualRevenue:
+        type: number
+        required: false
+        minimum: 0
+      numberOfEmployees:
+        type: integer
+        required: false
+        minimum: 0
+      description:
+        type: string
+        maxLength: 32000
+        required: false
+      billingAddress:
+        type: CommonTypes.Address
+        required: false
+      shippingAddress:
+        type: CommonTypes.Address
+        required: false
+      ownerId:
+        type: string
+        maxLength: 100
+        required: false
+      salesforceId:
+        type: string
+        maxLength: 18
+        required: false
+
+  Account:
+    description: Full account document as stored in MongoDB
+    type: AccountBase
+    properties:
+      id:
+        type: CommonTypes.MongoId
+        description: MongoDB ObjectId of the account document
+        example: "64a1b2c3d4e5f6789012abcd"
+      createdAt:
+        type: CommonTypes.ISODateTime
+        description: Timestamp when the record was created
+        example: "2024-01-10T08:00:00.000Z"
+      updatedAt:
+        type: CommonTypes.ISODateTime
+        description: Timestamp when the record was last updated
+        example: "2024-06-15T12:00:00.000Z"
+
+  AccountsResponse:
+    description: Paginated list of accounts
+    type: object
+    properties:
+      data:
+        type: Account[]
+        description: Array of account records
+      meta:
+        type: CommonTypes.PaginationMeta
+        description: Pagination metadata

@@ -1,0 +1,301 @@
+#%RAML 1.0 Library
+
+usage: Lead data type definition for the accounts-contacts-mongo-system-api
+
+uses:
+  CommonTypes: common-types.raml
+
+types:
+
+  LeadStatus:
+    description: Current status in the lead lifecycle
+    type: string
+    enum:
+      - New
+      - Open
+      - Working
+      - Unqualified
+      - Closed - Converted
+      - Closed - Not Converted
+
+  LeadSource:
+    description: Marketing source that generated the lead
+    type: string
+    enum:
+      - Web
+      - Phone Enquiry
+      - Partner Referral
+      - Purchased List
+      - Other
+      - Cold Call
+      - Employee Referral
+      - External Referral
+      - Public Relations
+      - Trade Show
+      - Word of mouth
+      - Internal
+      - Email Campaign
+
+  LeadBase:
+    description: Core fields shared by lead create and update payloads
+    type: object
+    properties:
+      firstName:
+        type: string
+        minLength: 1
+        maxLength: 80
+        required: false
+        description: First name of the lead
+        example: "John"
+      lastName:
+        type: string
+        minLength: 1
+        maxLength: 80
+        description: Last name of the lead
+        example: "Smith"
+      email:
+        type: string
+        maxLength: 80
+        required: false
+        pattern: "^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$"
+        description: Email address of the lead
+        example: "john.smith@example.com"
+      phone:
+        type: string
+        maxLength: 40
+        required: false
+        pattern: "^[+\\d\\s()\\-]{7,40}$"
+        description: Phone number of the lead
+        example: "+1-650-555-0300"
+      company:
+        type: string
+        minLength: 1
+        maxLength: 255
+        description: Company name of the lead
+        example: "Initech LLC"
+      title:
+        type: string
+        maxLength: 128
+        required: false
+        description: Job title of the lead
+        example: "Director of IT"
+      industry:
+        type: string
+        maxLength: 100
+        required: false
+        description: Industry of the lead's company
+        example: "Technology"
+      status:
+        type: LeadStatus
+        required: false
+        description: Current status of the lead
+        example: "New"
+      leadSource:
+        type: LeadSource
+        required: false
+        description: Source that generated this lead
+        example: "Web"
+      description:
+        type: string
+        maxLength: 32000
+        required: false
+        description: Free-text notes about the lead
+        example: "Interested in enterprise plan"
+      annualRevenue:
+        type: number
+        required: false
+        minimum: 0
+        description: Estimated annual revenue of the lead's company
+        example: 2500000.00
+      numberOfEmployees:
+        type: integer
+        required: false
+        minimum: 0
+        description: Number of employees at the lead's company
+        example: 100
+      address:
+        type: CommonTypes.Address
+        required: false
+        description: Address of the lead
+      isConverted:
+        type: boolean
+        required: false
+        description: Whether this lead has been converted to an account/contact
+        example: false
+      convertedAccountId:
+        type: CommonTypes.MongoId
+        required: false
+        description: MongoDB ObjectId of the account created upon conversion
+        example: "64a1b2c3d4e5f6789012abcd"
+      convertedContactId:
+        type: CommonTypes.MongoId
+        required: false
+        description: MongoDB ObjectId of the contact created upon conversion
+        example: "64c1d2e3f4a5b6789012cdef"
+      ownerId:
+        type: string
+        maxLength: 100
+        required: false
+        description: Identifier of the owner responsible for this lead
+        example: "user@example.com"
+      salesforceId:
+        type: string
+        maxLength: 18
+        required: false
+        description: Salesforce Lead ID for cross-system synchronisation
+        example: "00Q5g00000XxYzZAA1"
+
+  LeadRequest:
+    description: Payload for creating a new lead
+    type: LeadBase
+    properties:
+      lastName:
+        type: string
+        minLength: 1
+        maxLength: 80
+        required: true
+      company:
+        type: string
+        minLength: 1
+        maxLength: 255
+        required: true
+
+  LeadUpdateRequest:
+    description: Payload for updating an existing lead (all fields optional for partial update)
+    type: object
+    properties:
+      firstName:
+        type: string
+        minLength: 1
+        maxLength: 80
+        required: false
+      lastName:
+        type: string
+        minLength: 1
+        maxLength: 80
+        required: false
+      email:
+        type: string
+        maxLength: 80
+        required: false
+        pattern: "^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$"
+      phone:
+        type: string
+        maxLength: 40
+        required: false
+        pattern: "^[+\\d\\s()\\-]{7,40}$"
+      company:
+        type: string
+        minLength: 1
+        maxLength: 255
+        required: false
+      title:
+        type: string
+        maxLength: 128
+        required: false
+      industry:
+        type: string
+        maxLength: 100
+        required: false
+      status:
+        type: LeadStatus
+        required: false
+      leadSource:
+        type: LeadSource
+        required: false
+      description:
+        type: string
+        maxLength: 32000
+        required: false
+      annualRevenue:
+        type: number
+        required: false
+        minimum: 0
+      numberOfEmployees:
+        type: integer
+        required: false
+        minimum: 0
+      address:
+        type: CommonTypes.Address
+        required: false
+      ownerId:
+        type: string
+        maxLength: 100
+        required: false
+      salesforceId:
+        type: string
+        maxLength: 18
+        required: false
+
+  LeadConvertRequest:
+    description: Payload for converting a lead into an account and contact
+    type: object
+    properties:
+      createAccount:
+        type: boolean
+        description: Whether to create a new Account from this lead
+        example: true
+      accountId:
+        type: CommonTypes.MongoId
+        required: false
+        description: Existing account ObjectId to associate (if createAccount is false)
+        example: "64a1b2c3d4e5f6789012abcd"
+      createContact:
+        type: boolean
+        description: Whether to create a new Contact from this lead
+        example: true
+      convertedStatus:
+        type: LeadStatus
+        description: Status to set on the lead after conversion
+        example: "Closed - Converted"
+
+  Lead:
+    description: Full lead document as stored in MongoDB
+    type: LeadBase
+    properties:
+      id:
+        type: CommonTypes.MongoId
+        description: MongoDB ObjectId of the lead document
+        example: "64e1f2a3b4c5d6789012ef01"
+      createdAt:
+        type: CommonTypes.ISODateTime
+        description: Timestamp when the record was created
+        example: "2024-03-05T11:00:00.000Z"
+      updatedAt:
+        type: CommonTypes.ISODateTime
+        description: Timestamp when the record was last updated
+        example: "2024-08-10T16:00:00.000Z"
+
+  LeadsResponse:
+    description: Paginated list of leads
+    type: object
+    properties:
+      data:
+        type: Lead[]
+        description: Array of lead records
+      meta:
+        type: CommonTypes.PaginationMeta
+        description: Pagination metadata
+
+  LeadConvertResponse:
+    description: Result of a lead conversion operation
+    type: object
+    properties:
+      leadId:
+        type: CommonTypes.MongoId
+        description: ObjectId of the converted lead
+        example: "64e1f2a3b4c5d6789012ef01"
+      accountId:
+        type: CommonTypes.MongoId
+        required: false
+        description: ObjectId of the resulting account
+        example: "64a1b2c3d4e5f6789012abcd"
+      contactId:
+        type: CommonTypes.MongoId
+        required: false
+        description: ObjectId of the resulting contact
+        example: "64c1d2e3f4a5b6789012cdef"
+      status:
+        type: string
+        description: Result status of the conversion
+        example: "success"
