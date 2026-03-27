@@ -1,0 +1,22 @@
+#%RAML 1.0 Trait
+
+usage: Apply to GET collection endpoints to allow consumers to control sort order
+
+queryParameters:
+  sortBy:
+    type: string
+    description: |
+      Field name to sort by. Accepted values depend on the resource.
+      Common values: createdAt, updatedAt, name, email.
+    required: false
+    default: "createdAt"
+    example: "updatedAt"
+  sortOrder:
+    type: string
+    description: Sort direction
+    enum:
+      - asc
+      - desc
+    required: false
+    default: "desc"
+    example: "asc"

@@ -1,0 +1,62 @@
+#%RAML 1.0 SecurityScheme
+
+description: |
+  OAuth 2.0 Bearer Token authentication (RFC 6750).
+  Clients obtain an access token from the Anypoint Platform authorization
+  server using the Client Credentials grant type and include it as a
+  Bearer token in the Authorization header.
+
+  Token endpoint (Anypoint Platform):
+    POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token
+
+  Scopes:
+    - accounts:read    – read accounts, contacts, leads
+    - accounts:write   – create / update accounts, contacts, leads
+    - accounts:delete  – delete accounts, contacts, leads
+    - leads:convert    – convert a lead into an account and contact
+
+type: OAuth 2.0
+
+settings:
+  authorizationUri: "https://anypoint.mulesoft.com/accounts/api/v2/oauth2/authorize"
+  accessTokenUri: "https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token"
+  authorizationGrants:
+    - client_credentials
+    - authorization_code
+  scopes:
+    - accounts:read
+    - accounts:write
+    - accounts:delete
+    - leads:convert
+
+describedBy:
+  headers:
+    Authorization:
+      description: |
+        Bearer access token obtained from the Anypoint authorization server.
+        Format: "Bearer <access_token>"
+      type: string
+      required: true
+      pattern: "^Bearer .+"
+      example: "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+  responses:
+    401:
+      description: Missing, expired, or invalid Bearer token
+      body:
+        application/json:
+          example: |
+            {
+              "status": 401,
+              "error": "UNAUTHORIZED",
+              "message": "Bearer token is missing, expired or invalid"
+            }
+    403:
+      description: Token valid but required scope is not granted
+      body:
+        application/json:
+          example: |
+            {
+              "status": 403,
+              "error": "FORBIDDEN",
+              "message": "Insufficient scope to perform this operation"
+            }

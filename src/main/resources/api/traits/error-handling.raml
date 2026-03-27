@@ -1,0 +1,77 @@
+#%RAML 1.0 Trait
+
+usage: |
+  Apply to all endpoints to enforce standard error response shapes for
+  400, 401, 403, 404, 409 and 500 status codes.
+
+headers:
+  X-Correlation-Id:
+    description: |
+      Client-supplied or gateway-generated UUID used for end-to-end
+      request tracing across all layers of the platform.
+    type: string
+    pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    required: false
+    example: "550e8400-e29b-41d4-a716-446655440000"
+
+responses:
+  400:
+    description: Bad Request – the request payload or query parameters are invalid
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../datatypes/error-type.raml#/types/ErrorResponse
+        example: !include ../examples/errors/error-400.json
+  401:
+    description: Unauthorized – missing or invalid credentials
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../datatypes/error-type.raml#/types/ErrorResponse
+        example: !include ../examples/errors/error-401.json
+  403:
+    description: Forbidden – authenticated but lacking the required permissions
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../datatypes/error-type.raml#/types/ErrorResponse
+        example: !include ../examples/errors/error-403.json
+  404:
+    description: Not Found – the requested resource does not exist
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../datatypes/error-type.raml#/types/ErrorResponse
+        example: !include ../examples/errors/error-404.json
+  409:
+    description: Conflict – the resource already exists or a conflicting operation is in progress
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../datatypes/error-type.raml#/types/ErrorResponse
+        example: !include ../examples/errors/error-409.json
+  500:
+    description: Internal Server Error – an unexpected error occurred on the server
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+    body:
+      application/json:
+        type: !include ../datatypes/error-type.raml#/types/ErrorResponse
+        example: !include ../examples/errors/error-500.json

@@ -1,0 +1,47 @@
+{
+  "data": [
+    {
+      "id": "64e1f2a3b4c5d6789012ef01",
+      "firstName": "John",
+      "lastName": "Smith",
+      "email": "john.smith@initech.com",
+      "phone": "+1-650-555-0300",
+      "company": "Initech LLC",
+      "title": "Director of IT",
+      "industry": "Technology",
+      "status": "New",
+      "leadSource": "Web",
+      "description": "Interested in enterprise plan",
+      "annualRevenue": 2500000.00,
+      "numberOfEmployees": 100,
+      "isConverted": false,
+      "ownerId": "sales@example.com",
+      "salesforceId": "00Q5g00000XxYzZAA1",
+      "createdAt": "2024-03-05T11:00:00.000Z",
+      "updatedAt": "2024-08-10T16:00:00.000Z"
+    },
+    {
+      "id": "64f2a3b4c5d6e7890123f012",
+      "firstName": "Alice",
+      "lastName": "Brown",
+      "email": "alice.brown@techinnovate.io",
+      "company": "Tech Innovate Inc",
+      "title": "CTO",
+      "industry": "Technology",
+      "status": "Working",
+      "leadSource": "Trade Show",
+      "annualRevenue": 8000000.00,
+      "numberOfEmployees": 300,
+      "isConverted": false,
+      "ownerId": "sales2@example.com",
+      "createdAt": "2024-04-12T14:00:00.000Z",
+      "updatedAt": "2024-09-01T08:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "totalRecords": 42,
+    "page": 1,
+    "pageSize": 25,
+    "totalPages": 2
+  }
+}

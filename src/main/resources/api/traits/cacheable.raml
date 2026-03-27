@@ -1,0 +1,27 @@
+#%RAML 1.0 Trait
+
+usage: Apply to GET endpoints to add standard HTTP cache-control response headers
+
+headers:
+  Cache-Control:
+    description: |
+      Cache-Control directives. Value is set by the API according to resource
+      sensitivity. Typically "no-store" for sensitive resources and
+      "max-age=<seconds>" for read-heavy public resources.
+    type: string
+    required: false
+    example: "max-age=300, must-revalidate"
+  ETag:
+    description: Opaque entity tag for conditional requests (If-None-Match)
+    type: string
+    required: false
+    example: '"d41d8cd98f00b204e9800998ecf8427e"'
+  Last-Modified:
+    description: RFC 7231 date-time when the resource was last modified
+    type: string
+    required: false
+    example: "Mon, 15 Jan 2024 10:30:00 GMT"
+
+responses:
+  304:
+    description: Not Modified – the resource has not changed since the version specified by If-None-Match or If-Modified-Since

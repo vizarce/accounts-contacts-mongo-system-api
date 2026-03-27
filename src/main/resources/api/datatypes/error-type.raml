@@ -1,0 +1,56 @@
+#%RAML 1.0 Library
+
+usage: Error response types used across the accounts-contacts-mongo-system-api
+
+types:
+
+  ErrorDetail:
+    description: Details about a specific field-level validation error
+    type: object
+    properties:
+      field:
+        type: string
+        description: The field that caused the error
+        example: "email"
+      message:
+        type: string
+        description: Human-readable description of the field error
+        example: "must be a valid email address"
+      rejectedValue:
+        type: any
+        required: false
+        description: The value that was rejected
+        example: "not-an-email"
+
+  ErrorResponse:
+    description: Standard error response envelope
+    type: object
+    properties:
+      correlationId:
+        type: string
+        description: Unique identifier for request tracing
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      status:
+        type: integer
+        description: HTTP status code
+        example: 400
+      error:
+        type: string
+        description: Short error code / reason phrase
+        example: "BAD_REQUEST"
+      message:
+        type: string
+        description: Human-readable error description
+        example: "Request validation failed"
+      path:
+        type: string
+        description: Request path that generated the error
+        example: "/api/v1/accounts"
+      timestamp:
+        type: string
+        description: ISO 8601 timestamp when the error occurred
+        example: "2024-01-15T10:30:00.000Z"
+      details:
+        type: ErrorDetail[]
+        required: false
+        description: Optional list of field-level validation errors

@@ -1,0 +1,956 @@
+#%RAML 1.0
+title: accounts-contacts-mongo-system-api
+description: |
+  System-layer API for managing Accounts, Contacts and Leads stored in MongoDB.
+
+  This API exposes full CRUD operations and additional business actions
+  (e.g. lead conversion) against three MongoDB collections in the
+  *accounts* database:
+
+  | Collection  | Status         |
+  |-------------|----------------|
+  | accountapi  | exists         |
+  | contacts    | created by API |
+  | leads       | created by API |
+
+  It is designed to be consumed exclusively by the **Process Layer**
+  (accounts-contacts-process-api) and provides the data-access
+  abstraction required for future Salesforce integration.
+
+  ## Security
+  All endpoints are protected by **Client ID Enforcement** (default) and
+  support OAuth 2.0 Bearer tokens for process-layer consumers.
+  Individual endpoints advertise the supported schemes.
+
+  ## Pagination, Filtering & Sorting
+  Collection (list) endpoints support standard `page` / `pageSize`
+  query parameters, free-text search (`q`), field-level filters and
+  `sortBy` / `sortOrder` parameters — see the shared traits for details.
+
+  ## Error Handling
+  All error responses follow a uniform `ErrorResponse` envelope with an
+  optional `details` array for field-level validation errors.
+
+  ## Tracing
+  Supply an `X-Correlation-Id` (UUID v4) request header for end-to-end
+  traceability across all platform layers.
+
+version: v1
+baseUri: "https://{environment}.accounts-contacts-mongo-sys-api.example.com/api/{version}"
+baseUriParameters:
+  environment:
+    description: Deployment environment
+    type: string
+    enum:
+      - dev
+      - sit
+      - uat
+      - prod
+    example: dev
+
+protocols:
+  - HTTPS
+
+mediaType:
+  - application/json
+
+uses:
+  Lib: libraries/commons.raml
+
+securitySchemes:
+  clientIdEnforcement: !include securitySchemes/client-id-enforcement.raml
+  basicAuth:           !include securitySchemes/basic-auth.raml
+  oauth2:              !include securitySchemes/oauth2.raml
+
+securedBy:
+  - clientIdEnforcement
+
+traits:
+  pageable:      !include traits/pageable.raml
+  searchable:    !include traits/searchable.raml
+  sortable:      !include traits/sortable.raml
+  cacheable:     !include traits/cacheable.raml
+  errorHandling: !include traits/error-handling.raml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /accounts  →  MongoDB collection: accountapi
+# ─────────────────────────────────────────────────────────────────────────────
+/accounts:
+  description: |
+    Manages account documents in the *accountapi* MongoDB collection.
+    Accounts represent organisations or companies and are the central entity
+    in the CRM data model. Contacts and Leads may reference an Account.
+
+  # ── GET /accounts ──────────────────────────────────────────────────────────
+  get:
+    displayName: List Accounts
+    description: |
+      Returns a paginated, filterable and sortable list of accounts.
+      Supports free-text search across accountName, accountNumber and description.
+    is:
+      - pageable
+      - searchable
+      - sortable
+      - cacheable
+      - errorHandling
+    securedBy:
+      - clientIdEnforcement
+      - oauth2
+    queryParameters:
+      type:
+        type: string
+        description: Filter by account type
+        enum:
+          - Prospect
+          - Customer
+          - Partner
+          - Reseller
+          - Vendor
+          - Other
+        required: false
+        example: "Customer"
+      industry:
+        type: string
+        description: Filter by industry (exact match)
+        required: false
+        example: "Technology"
+      salesforceId:
+        type: string
+        description: Filter by Salesforce Account ID (exact match, 18-char)
+        required: false
+        maxLength: 18
+        example: "0015g00000XxYzZAA1"
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+        description: Client-supplied UUID for request tracing
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      200:
+        description: Paginated list of accounts
+        headers:
+          X-Correlation-Id:
+            type: string
+            required: false
+        body:
+          application/json:
+            type: Lib.AccountsResponse
+            example: !include examples/accounts/accounts-response.json
+
+  # ── POST /accounts ─────────────────────────────────────────────────────────
+  post:
+    displayName: Create Account
+    description: Creates a new account document in the *accountapi* collection.
+    is:
+      - errorHandling
+    securedBy:
+      - clientIdEnforcement
+      - oauth2
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    body:
+      application/json:
+        type: Lib.AccountRequest
+        example: !include examples/accounts/account-request.json
+    responses:
+      201:
+        description: Account created successfully
+        headers:
+          Location:
+            description: URI of the newly created account
+            type: string
+            example: "/api/v1/accounts/64a1b2c3d4e5f6789012abcd"
+          X-Correlation-Id:
+            type: string
+            required: false
+        body:
+          application/json:
+            type: Lib.Account
+            example: !include examples/accounts/account-response.json
+      409:
+        description: An account with the same accountNumber already exists
+        headers:
+          X-Correlation-Id:
+            type: string
+            required: false
+        body:
+          application/json:
+            type: Lib.ErrorResponse
+            example: !include examples/errors/error-409.json
+
+  # ── /accounts/{id} ─────────────────────────────────────────────────────────
+  /{id}:
+    description: Operations on a single account identified by its MongoDB ObjectId
+    uriParameters:
+      id:
+        type: string
+        description: MongoDB ObjectId of the account (24-character hex string)
+        pattern: "^[a-fA-F0-9]{24}$"
+        example: "64a1b2c3d4e5f6789012abcd"
+
+    # ── GET /accounts/{id} ───────────────────────────────────────────────────
+    get:
+      displayName: Get Account by ID
+      description: Returns the account document identified by the given MongoDB ObjectId.
+      is:
+        - cacheable
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        200:
+          description: Account found
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Account
+              example: !include examples/accounts/account-response.json
+
+    # ── PUT /accounts/{id} ───────────────────────────────────────────────────
+    put:
+      displayName: Replace Account
+      description: |
+        Fully replaces the account document. All required fields must be supplied.
+        Fields omitted from the request body will be cleared (set to null / removed).
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      body:
+        application/json:
+          type: Lib.AccountRequest
+          example: !include examples/accounts/account-request.json
+      responses:
+        200:
+          description: Account replaced successfully
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Account
+              example: !include examples/accounts/account-response.json
+
+    # ── PATCH /accounts/{id} ─────────────────────────────────────────────────
+    patch:
+      displayName: Partial Update Account
+      description: |
+        Partially updates the account document.
+        Only fields present in the request body are updated; all other fields
+        retain their current values.
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      body:
+        application/json:
+          type: Lib.AccountUpdateRequest
+          example:
+            value: |
+              {
+                "industry": "Healthcare",
+                "numberOfEmployees": 300
+              }
+      responses:
+        200:
+          description: Account updated successfully
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Account
+              example: !include examples/accounts/account-response.json
+
+    # ── DELETE /accounts/{id} ────────────────────────────────────────────────
+    delete:
+      displayName: Delete Account
+      description: |
+        Permanently deletes the account document from the *accountapi* collection.
+        Associated contacts are **not** automatically deleted; the caller is
+        responsible for managing orphaned records.
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        204:
+          description: Account deleted successfully — no content returned
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+
+    # ── /accounts/{id}/contacts ───────────────────────────────────────────────
+    /contacts:
+      description: Contacts that belong to the given account
+      get:
+        displayName: List Contacts for Account
+        description: |
+          Returns all contacts associated with the given account.
+          Supports pagination, filtering and sorting.
+        is:
+          - pageable
+          - sortable
+          - cacheable
+          - errorHandling
+        securedBy:
+          - clientIdEnforcement
+          - oauth2
+        headers:
+          X-Correlation-Id:
+            type: string
+            required: false
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        responses:
+          200:
+            description: Paginated list of contacts for the account
+            headers:
+              X-Correlation-Id:
+                type: string
+                required: false
+            body:
+              application/json:
+                type: Lib.ContactsResponse
+                example: !include examples/contacts/contacts-response.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /contacts  →  MongoDB collection: contacts
+# ─────────────────────────────────────────────────────────────────────────────
+/contacts:
+  description: |
+    Manages contact documents in the *contacts* MongoDB collection.
+    Contacts represent individual people at an account and can be associated
+    with leads generated during marketing campaigns.
+
+    **Note:** This collection does not exist yet and will be created
+    automatically on the first write operation.
+
+  # ── GET /contacts ──────────────────────────────────────────────────────────
+  get:
+    displayName: List Contacts
+    description: Returns a paginated, filterable and sortable list of contacts.
+    is:
+      - pageable
+      - searchable
+      - sortable
+      - cacheable
+      - errorHandling
+    securedBy:
+      - clientIdEnforcement
+      - oauth2
+    queryParameters:
+      accountId:
+        type: string
+        description: Filter contacts by parent account MongoDB ObjectId
+        required: false
+        pattern: "^[a-fA-F0-9]{24}$"
+        example: "64a1b2c3d4e5f6789012abcd"
+      department:
+        type: string
+        description: Filter by department (exact match, case-insensitive)
+        required: false
+        maxLength: 80
+        example: "Engineering"
+      salesforceId:
+        type: string
+        description: Filter by Salesforce Contact ID (exact match, 18-char)
+        required: false
+        maxLength: 18
+        example: "0035g00000XxYzZAA1"
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      200:
+        description: Paginated list of contacts
+        headers:
+          X-Correlation-Id:
+            type: string
+            required: false
+        body:
+          application/json:
+            type: Lib.ContactsResponse
+            example: !include examples/contacts/contacts-response.json
+
+  # ── POST /contacts ─────────────────────────────────────────────────────────
+  post:
+    displayName: Create Contact
+    description: Creates a new contact document in the *contacts* collection.
+    is:
+      - errorHandling
+    securedBy:
+      - clientIdEnforcement
+      - oauth2
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    body:
+      application/json:
+        type: Lib.ContactRequest
+        example: !include examples/contacts/contact-request.json
+    responses:
+      201:
+        description: Contact created successfully
+        headers:
+          Location:
+            description: URI of the newly created contact
+            type: string
+            example: "/api/v1/contacts/64c1d2e3f4a5b6789012cdef"
+          X-Correlation-Id:
+            type: string
+            required: false
+        body:
+          application/json:
+            type: Lib.Contact
+            example: !include examples/contacts/contact-response.json
+
+  # ── /contacts/{id} ─────────────────────────────────────────────────────────
+  /{id}:
+    description: Operations on a single contact identified by its MongoDB ObjectId
+    uriParameters:
+      id:
+        type: string
+        description: MongoDB ObjectId of the contact (24-character hex string)
+        pattern: "^[a-fA-F0-9]{24}$"
+        example: "64c1d2e3f4a5b6789012cdef"
+
+    # ── GET /contacts/{id} ───────────────────────────────────────────────────
+    get:
+      displayName: Get Contact by ID
+      description: Returns the contact document identified by the given MongoDB ObjectId.
+      is:
+        - cacheable
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        200:
+          description: Contact found
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Contact
+              example: !include examples/contacts/contact-response.json
+
+    # ── PUT /contacts/{id} ───────────────────────────────────────────────────
+    put:
+      displayName: Replace Contact
+      description: |
+        Fully replaces the contact document. All required fields must be supplied.
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      body:
+        application/json:
+          type: Lib.ContactRequest
+          example: !include examples/contacts/contact-request.json
+      responses:
+        200:
+          description: Contact replaced successfully
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Contact
+              example: !include examples/contacts/contact-response.json
+
+    # ── PATCH /contacts/{id} ─────────────────────────────────────────────────
+    patch:
+      displayName: Partial Update Contact
+      description: |
+        Partially updates the contact document.
+        Only fields present in the request body are updated.
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      body:
+        application/json:
+          type: Lib.ContactUpdateRequest
+          example:
+            value: |
+              {
+                "title": "Principal Engineer",
+                "department": "Platform"
+              }
+      responses:
+        200:
+          description: Contact updated successfully
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Contact
+              example: !include examples/contacts/contact-response.json
+
+    # ── DELETE /contacts/{id} ────────────────────────────────────────────────
+    delete:
+      displayName: Delete Contact
+      description: Permanently deletes the contact document from the *contacts* collection.
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        204:
+          description: Contact deleted successfully — no content returned
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /leads  →  MongoDB collection: leads
+# ─────────────────────────────────────────────────────────────────────────────
+/leads:
+  description: |
+    Manages lead documents in the *leads* MongoDB collection.
+    A lead represents a prospective customer who has not yet been qualified.
+    Leads can be converted into Accounts and Contacts via the
+    `POST /leads/{id}/convert` endpoint.
+
+    **Note:** This collection does not exist yet and will be created
+    automatically on the first write operation.
+
+  # ── GET /leads ─────────────────────────────────────────────────────────────
+  get:
+    displayName: List Leads
+    description: Returns a paginated, filterable and sortable list of leads.
+    is:
+      - pageable
+      - searchable
+      - sortable
+      - cacheable
+      - errorHandling
+    securedBy:
+      - clientIdEnforcement
+      - oauth2
+    queryParameters:
+      status:
+        type: string
+        description: Filter by lead status
+        enum:
+          - New
+          - Open
+          - Working
+          - Unqualified
+          - "Closed - Converted"
+          - "Closed - Not Converted"
+        required: false
+        example: "New"
+      leadSource:
+        type: string
+        description: Filter by lead source
+        required: false
+        example: "Web"
+      isConverted:
+        type: boolean
+        description: Filter by conversion status
+        required: false
+        example: false
+      industry:
+        type: string
+        description: Filter by industry (partial match, case-insensitive)
+        required: false
+        maxLength: 100
+        example: "Technology"
+      salesforceId:
+        type: string
+        description: Filter by Salesforce Lead ID (exact match, 18-char)
+        required: false
+        maxLength: 18
+        example: "00Q5g00000XxYzZAA1"
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      200:
+        description: Paginated list of leads
+        headers:
+          X-Correlation-Id:
+            type: string
+            required: false
+        body:
+          application/json:
+            type: Lib.LeadsResponse
+            example: !include examples/leads/leads-response.json
+
+  # ── POST /leads ────────────────────────────────────────────────────────────
+  post:
+    displayName: Create Lead
+    description: Creates a new lead document in the *leads* collection.
+    is:
+      - errorHandling
+    securedBy:
+      - clientIdEnforcement
+      - oauth2
+    headers:
+      X-Correlation-Id:
+        type: string
+        required: false
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    body:
+      application/json:
+        type: Lib.LeadRequest
+        example: !include examples/leads/lead-request.json
+    responses:
+      201:
+        description: Lead created successfully
+        headers:
+          Location:
+            description: URI of the newly created lead
+            type: string
+            example: "/api/v1/leads/64e1f2a3b4c5d6789012ef01"
+          X-Correlation-Id:
+            type: string
+            required: false
+        body:
+          application/json:
+            type: Lib.Lead
+            example: !include examples/leads/lead-response.json
+
+  # ── /leads/{id} ────────────────────────────────────────────────────────────
+  /{id}:
+    description: Operations on a single lead identified by its MongoDB ObjectId
+    uriParameters:
+      id:
+        type: string
+        description: MongoDB ObjectId of the lead (24-character hex string)
+        pattern: "^[a-fA-F0-9]{24}$"
+        example: "64e1f2a3b4c5d6789012ef01"
+
+    # ── GET /leads/{id} ──────────────────────────────────────────────────────
+    get:
+      displayName: Get Lead by ID
+      description: Returns the lead document identified by the given MongoDB ObjectId.
+      is:
+        - cacheable
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        200:
+          description: Lead found
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Lead
+              example: !include examples/leads/lead-response.json
+
+    # ── PUT /leads/{id} ──────────────────────────────────────────────────────
+    put:
+      displayName: Replace Lead
+      description: |
+        Fully replaces the lead document. All required fields must be supplied.
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      body:
+        application/json:
+          type: Lib.LeadRequest
+          example: !include examples/leads/lead-request.json
+      responses:
+        200:
+          description: Lead replaced successfully
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Lead
+              example: !include examples/leads/lead-response.json
+
+    # ── PATCH /leads/{id} ────────────────────────────────────────────────────
+    patch:
+      displayName: Partial Update Lead
+      description: |
+        Partially updates the lead document.
+        Only fields present in the request body are updated.
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      body:
+        application/json:
+          type: Lib.LeadUpdateRequest
+          example:
+            value: |
+              {
+                "status": "Working",
+                "description": "Follow-up scheduled for next week"
+              }
+      responses:
+        200:
+          description: Lead updated successfully
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+          body:
+            application/json:
+              type: Lib.Lead
+              example: !include examples/leads/lead-response.json
+
+    # ── DELETE /leads/{id} ───────────────────────────────────────────────────
+    delete:
+      displayName: Delete Lead
+      description: Permanently deletes the lead document from the *leads* collection.
+      is:
+        - errorHandling
+      securedBy:
+        - clientIdEnforcement
+        - oauth2
+      headers:
+        X-Correlation-Id:
+          type: string
+          required: false
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        204:
+          description: Lead deleted successfully — no content returned
+          headers:
+            X-Correlation-Id:
+              type: string
+              required: false
+
+    # ── POST /leads/{id}/convert ─────────────────────────────────────────────
+    /convert:
+      description: |
+        Converts a lead into a new Account and/or Contact.
+        This action is irreversible: after conversion the lead's `isConverted`
+        flag is set to `true` and its status changes to "Closed - Converted".
+
+        If the lead was previously synchronised with Salesforce, the process
+        layer is expected to mirror the conversion there via the Salesforce API.
+
+      post:
+        displayName: Convert Lead
+        description: |
+          Converts the specified lead into an Account and/or Contact.
+          Optionally links to an existing account instead of creating a new one.
+        is:
+          - errorHandling
+        securedBy:
+          - clientIdEnforcement
+          - oauth2
+        headers:
+          X-Correlation-Id:
+            type: string
+            required: false
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        body:
+          application/json:
+            type: Lib.LeadConvertRequest
+            example: !include examples/leads/lead-convert-request.json
+        responses:
+          200:
+            description: Lead converted successfully
+            headers:
+              X-Correlation-Id:
+                type: string
+                required: false
+            body:
+              application/json:
+                type: Lib.LeadConvertResponse
+                example: !include examples/leads/lead-convert-response.json
+          409:
+            description: Lead is already converted
+            headers:
+              X-Correlation-Id:
+                type: string
+                required: false
+            body:
+              application/json:
+                type: Lib.ErrorResponse
+                example: !include examples/errors/error-409.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /health  →  System health-check endpoint
+# ─────────────────────────────────────────────────────────────────────────────
+/health:
+  description: |
+    Lightweight health-check endpoint for load-balancer and monitoring probes.
+    Does **not** require authentication.
+
+  get:
+    displayName: Health Check
+    description: |
+      Returns the operational status of the API and its MongoDB connection.
+      Intended for use by Anypoint API Manager health checks, Kubernetes
+      liveness/readiness probes, and infrastructure monitoring tools.
+    securedBy: []
+    responses:
+      200:
+        description: API is healthy and the MongoDB connection is active
+        body:
+          application/json:
+            type: object
+            properties:
+              status:
+                type: string
+                enum:
+                  - UP
+                  - DEGRADED
+                example: "UP"
+              version:
+                type: string
+                description: API version
+                example: "v1"
+              timestamp:
+                type: string
+                description: ISO 8601 current server timestamp (UTC)
+                example: "2024-01-15T10:30:00.000Z"
+              dependencies:
+                type: object
+                properties:
+                  mongodb:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum:
+                          - UP
+                          - DOWN
+                        example: "UP"
+                      database:
+                        type: string
+                        description: Connected MongoDB database name
+                        example: "accounts"
+            example:
+              value: |
+                {
+                  "status": "UP",
+                  "version": "v1",
+                  "timestamp": "2024-01-15T10:30:00.000Z",
+                  "dependencies": {
+                    "mongodb": {
+                      "status": "UP",
+                      "database": "accounts"
+                    }
+                  }
+                }
+      503:
+        description: API is running but the MongoDB connection is unavailable
+        body:
+          application/json:
+            type: object
+            properties:
+              status:
+                type: string
+                enum:
+                  - DOWN
+                  - DEGRADED
+                example: "DEGRADED"
+              version:
+                type: string
+                example: "v1"
+              timestamp:
+                type: string
+                example: "2024-01-15T10:30:00.000Z"
+              dependencies:
+                type: object
+                properties:
+                  mongodb:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: "DOWN"
+                      error:
+                        type: string
+                        example: "Connection timeout after 5000ms"

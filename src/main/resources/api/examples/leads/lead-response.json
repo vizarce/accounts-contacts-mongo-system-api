@@ -1,0 +1,27 @@
+{
+  "id": "64e1f2a3b4c5d6789012ef01",
+  "firstName": "John",
+  "lastName": "Smith",
+  "email": "john.smith@initech.com",
+  "phone": "+1-650-555-0300",
+  "company": "Initech LLC",
+  "title": "Director of IT",
+  "industry": "Technology",
+  "status": "New",
+  "leadSource": "Web",
+  "description": "Interested in enterprise plan",
+  "annualRevenue": 2500000.00,
+  "numberOfEmployees": 100,
+  "address": {
+    "street": "789 Tech Park",
+    "city": "Austin",
+    "state": "TX",
+    "postalCode": "73301",
+    "country": "USA"
+  },
+  "isConverted": false,
+  "ownerId": "sales@example.com",
+  "salesforceId": "00Q5g00000XxYzZAA1",
+  "createdAt": "2024-03-05T11:00:00.000Z",
+  "updatedAt": "2024-08-10T16:00:00.000Z"
+}
